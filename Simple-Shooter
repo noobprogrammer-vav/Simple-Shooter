@@ -1,0 +1,153 @@
+import pygame,random,time,math
+from pygame.locals import *
+from pygame import mixer
+
+pygame.init()
+mixer.init()
+
+#Colours:
+black = pygame.Color(0, 0, 0)
+white = pygame.Color(255, 255, 255)
+grey = pygame.Color(70,70,70)
+red = pygame.Color(255, 0, 0)
+blue = pygame.Color(0, 0, 255)
+fire = pygame.Color(255, 125, 0)
+water = pygame.Color(210,235,255)
+color1 = grey
+color2 = white
+
+#Params
+x,y = 480,480
+run = True
+imi = 'C'
+Score = 0
+#Scroll = 0
+
+#sounds:
+bullet_crash = mixer.Sound('bullet_crash.mp3')
+end_crach = mixer.Sound('end_crash.mp3')
+game_overr = mixer.Sound('Game_over.mp3')
+mixer.music.load('bgm.mp3')
+mixer.music.play()
+
+#pictures:
+
+
+
+
+#Screen
+disp = pygame.display.set_mode(((x+2),y))
+pygame.display.set_caption('Shooter')
+bg = pygame.image.load('bgi.jpeg').convert()  #Background Image
+bg_height = bg.get_height()
+
+#tiles:
+tile = math.ceil(y/bg_height) + 1
+
+#Shooter:
+shooter_x = [int(x/12),int(x/2.388),int(x/1.3259)]
+shooter_h,shooter_w = int(x/16),int(y/6)
+shooter_y = y-shooter_h
+shooter_pos = shooter_x[1]
+
+#Bullets:
+
+bl_y = shooter_y
+Bullet_speed = 0.1
+
+
+
+#Seperators:
+sep1 = pygame.Rect(int(x/3),0,1,y)
+sep2 = pygame.Rect(int(x/1.5)+1,0,1,y)
+
+#Enemies:
+enemy_x = [(shooter_x[0]+int(shooter_w/2)-10),(shooter_x[1]+int(shooter_w/2)-10),(shooter_x[2]+int(shooter_w/2)-10)]
+enemy_y = 0
+enemy_w,enemy_h = int(x/24),int(y/24)
+Enemy_speed = 0.1
+enemy_pos = random.choice(enemy_x)
+enemy_pos_instance = []
+
+#game_over:
+def game_over():
+    my_font = pygame.font.SysFont('times new roman', 20)
+    game_over_surface = my_font.render('Game Over!! Your Score is : ' + str(Score), True, red)       
+    game_over_rect = game_over_surface.get_rect()
+    game_over_rect.midtop = (x/2, y/2)
+    disp.blit(game_over_surface, game_over_rect)
+    pygame.display.flip()
+    print(Score)
+    time.sleep(5)
+    running = False
+    pygame.quit()
+
+time.sleep(5)
+#Logics and Animation:
+while run:
+    i = 0
+    while (i < tile):
+        disp.blit(bg,(0,i*bg_height))
+        i+=1
+    
+    enemy_pos_instance = [i for i in range(enemy_pos,enemy_pos+enemy_w)]
+    bullet_pos = shooter_pos+int(shooter_w/2)
+    enemy_y += Enemy_speed
+    bl_y -= Bullet_speed
+    
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            run = False
+        keys = pygame.key.get_pressed()
+
+        if keys[pygame.K_RIGHT] and imi == 'C':
+            imi = 'R'
+            shooter_pos = shooter_x[2]
+            bl_y = shooter_y
+        if keys[pygame.K_LEFT] and imi == 'C':
+            imi = 'L'
+            shooter_pos = shooter_x[0]
+            bl_y = shooter_y
+
+        if keys[pygame.K_RIGHT] and imi == 'L':
+            imi = 'C'
+            shooter_pos = shooter_x[1]
+            bl_y = shooter_y
+        
+        if keys[pygame.K_LEFT] and imi == 'R':
+            imi = 'C'
+            shooter_pos = shooter_x[1]
+            bl_y = shooter_y
+    
+    if (bullet_pos in enemy_pos_instance and bl_y <= enemy_y):
+        mixer.Sound.play(bullet_crash)
+        enemy_pos = random.choice(enemy_x)
+        enemy_y = 0
+        bullet_pos = shooter_pos+int(shooter_w/2)
+        bl_y = shooter_y
+        Score += 1
+        if Enemy_speed < 1:
+            Enemy_speed += 0.015
+            Bullet_speed += 0.02
+
+    if bl_y <=0:
+        bl_y = shooter_y
+
+    if (enemy_y >= y):
+        mixer.Sound.play(end_crach)
+        mixer.music.pause()
+        time.sleep(2)
+        mixer.Sound.play(game_overr)
+        game_over()
+        
+    
+    enemy_pos_instance.clear()
+    #disp.fill(color1)
+    pygame.draw.rect(disp,color2,sep1)
+    pygame.draw.rect(disp,color2,sep2)
+    pygame.draw.rect(disp, color2, (shooter_pos,shooter_y,shooter_w,shooter_h))
+    pygame.draw.circle(disp, water, (bullet_pos,bl_y), 10)
+    pygame.draw.rect(disp,fire,(enemy_pos,enemy_y,enemy_w,enemy_h))
+    pygame.display.update()
+
+pygame.quit()
