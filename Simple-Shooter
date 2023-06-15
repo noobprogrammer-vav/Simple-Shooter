@@ -1,6 +1,18 @@
 import pygame,random,time,math
 from pygame.locals import *
 from pygame import mixer
+import mysql.connector
+
+mydb = mysql.connector.connect(
+  host="localhost",
+  user="",
+  password="",
+  database="Scores"
+)
+
+mycursor = mydb.cursor()
+# Getting  Score Values from Database
+
 
 pygame.init()
 mixer.init()
@@ -25,9 +37,9 @@ Score = 0
 
 #sounds:
 bullet_crash = mixer.Sound('bullet_crash.mp3')
-end_crach = mixer.Sound('end_crash.mp3')
-game_overr = mixer.Sound('Game_over.mp3')
-mixer.music.load('bgm.mp3')
+end_crach = mixer.Sound('end_explosion.mp3')
+game_overr = mixer.Sound('Game_over.wav')
+mixer.music.load('digital-love-127441.mp3')
 mixer.music.play()
 
 #pictures:
@@ -38,7 +50,7 @@ mixer.music.play()
 #Screen
 disp = pygame.display.set_mode(((x+2),y))
 pygame.display.set_caption('Shooter')
-bg = pygame.image.load('bgi.jpeg').convert()  #Background Image
+bg = pygame.image.load('Fallingstars.gif').convert()
 bg_height = bg.get_height()
 
 #tiles:
@@ -71,8 +83,18 @@ enemy_pos_instance = []
 
 #game_over:
 def game_over():
+    mycursor.execute("SELECT * FROM ShooterScores")
+    Previous_High = 0
+    for i in mycursor:
+        Previous_High+=i[1]
+    HiScore = Previous_High
+    if Score>Previous_High:
+        mycursor.execute("UPDATE ShooterScores set Scores = {} Where id = 1".format(Score))
+        HiScore = Score
+        mydb.commit()
     my_font = pygame.font.SysFont('times new roman', 20)
-    game_over_surface = my_font.render('Game Over!! Your Score is : ' + str(Score), True, red)       
+    game_over_surface = my_font.render('Game Over!! HighScore is :{} Your Score is :{}'.format(HiScore,Score), True, red) 
+    #game_over_surface = my_font.render('HighScore is : ' + str(HiScore), True, red)      
     game_over_rect = game_over_surface.get_rect()
     game_over_rect.midtop = (x/2, y/2)
     disp.blit(game_over_surface, game_over_rect)
@@ -90,6 +112,9 @@ while run:
         disp.blit(bg,(0,i*bg_height))
         i+=1
     
+    #Scroll += 0.01
+    #if Scroll > bg_height:
+        #Scroll = 0
     enemy_pos_instance = [i for i in range(enemy_pos,enemy_pos+enemy_w)]
     bullet_pos = shooter_pos+int(shooter_w/2)
     enemy_y += Enemy_speed
@@ -149,5 +174,6 @@ while run:
     pygame.draw.circle(disp, water, (bullet_pos,bl_y), 10)
     pygame.draw.rect(disp,fire,(enemy_pos,enemy_y,enemy_w,enemy_h))
     pygame.display.update()
+connection.close()
 
 pygame.quit()
